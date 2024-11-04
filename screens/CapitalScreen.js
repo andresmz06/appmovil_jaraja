@@ -1,9 +1,13 @@
 // screens/CapitalScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
+import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc } from 'firebase/firestore';
+import appFirebase from '../credenciales';
+
+const db = getFirestore(appFirebase);
 
 const CapitalScreen = () => {
   const [ingresos, setIngresos] = useState([]);
@@ -16,13 +20,23 @@ const CapitalScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fechaTexto, setFechaTexto] = useState('');
 
-  // Calcula el total de ingresos
+  // Leer datos de Firebase al iniciar
   useEffect(() => {
-    const total = ingresos.reduce((acc, ingreso) => acc + ingreso.monto, 0);
+    const cargarIngresos = async () => {
+      const querySnapshot = await getDocs(collection(db, 'Finanza'));
+      const datos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const ingresosFiltrados = datos.filter((item) => item.Tipo === 'Ingreso');
+      setIngresos(ingresosFiltrados);
+    };
+    cargarIngresos();
+  }, []);
+
+  useEffect(() => {
+    const total = ingresos.reduce((acc, ingreso) => acc + ingreso.Monto, 0);
     setTotalIngresos(total);
   }, [ingresos]);
 
-  const agregarIngreso = () => {
+  const agregarIngreso = async () => {
     if (!nombreIngreso || !montoIngreso || !fechaTexto) {
       Alert.alert('Error', 'Debe completar todos los campos');
       return;
@@ -35,20 +49,19 @@ const CapitalScreen = () => {
     }
 
     const nuevoIngreso = {
-      id: editandoIngreso ? editandoIngreso.id : ingresos.length.toString(),
       nombre: nombreIngreso,
-      monto: numericMonto,
-      fecha: fechaTexto,
+      Monto: numericMonto,
+      Fecha: fechaIngreso,
+      Tipo: 'Ingreso',
     };
 
     if (editandoIngreso) {
-      const nuevosIngresos = ingresos.map((ingreso) =>
-        ingreso.id === editandoIngreso.id ? nuevoIngreso : ingreso
-      );
-      setIngresos(nuevosIngresos);
+      await updateDoc(doc(db, 'Finanza', editandoIngreso.id), nuevoIngreso);
+      setIngresos(ingresos.map((ingreso) => (ingreso.id === editandoIngreso.id ? { id: editandoIngreso.id, ...nuevoIngreso } : ingreso)));
       setEditandoIngreso(null);
     } else {
-      setIngresos([...ingresos, nuevoIngreso]);
+      const docRef = await addDoc(collection(db, 'Finanza'), nuevoIngreso);
+      setIngresos([...ingresos, { id: docRef.id, ...nuevoIngreso }]);
     }
 
     setNombreIngreso('');
@@ -57,14 +70,15 @@ const CapitalScreen = () => {
     setModalVisible(false);
   };
 
-  const eliminarIngreso = (id) => {
+  const eliminarIngreso = async (id) => {
+    await deleteDoc(doc(db, 'Finanza', id));
     setIngresos(ingresos.filter((ingreso) => ingreso.id !== id));
   };
 
   const editarIngreso = (ingreso) => {
     setNombreIngreso(ingreso.nombre);
-    setMontoIngreso(ingreso.monto.toString());
-    setFechaTexto(ingreso.fecha);
+    setMontoIngreso(ingreso.Monto.toString());
+    setFechaTexto(new Date(ingreso.Fecha.seconds * 1000).toLocaleDateString());
     setEditandoIngreso(ingreso);
     setModalVisible(true);
   };
@@ -72,8 +86,8 @@ const CapitalScreen = () => {
   const renderIngreso = ({ item }) => (
     <View style={styles.ingresoRow}>
       <Text style={styles.ingresoText}>{item.nombre}</Text>
-      <Text style={styles.ingresoText}>{item.monto.toLocaleString()} Gs.</Text>
-      <Text style={styles.ingresoText}>{item.fecha}</Text>
+      <Text style={styles.ingresoText}>{item.Monto.toLocaleString()} Gs.</Text>
+      <Text style={styles.ingresoText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
       <View style={styles.rowButtons}>
         <Button title="Editar" onPress={() => editarIngreso(item)} color="blue" />
         <Button title="Eliminar" onPress={() => eliminarIngreso(item.id)} color="red" />

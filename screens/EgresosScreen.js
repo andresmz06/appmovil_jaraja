@@ -4,6 +4,10 @@ import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, 
 import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
+import { getFirestore, collection, addDoc, deleteDoc, updateDoc, getDocs, doc } from 'firebase/firestore';
+import appFirebase from '../credenciales';
+
+const db = getFirestore(appFirebase);
 
 const EgresosScreen = () => {
   const [egresos, setEgresos] = useState([]);
@@ -16,12 +20,23 @@ const EgresosScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fechaTexto, setFechaTexto] = useState('');
 
+  // Leer datos de Firebase al iniciar
   useEffect(() => {
-    const total = egresos.reduce((acc, egreso) => acc + egreso.monto, 0);
+    const cargarEgresos = async () => {
+      const querySnapshot = await getDocs(collection(db, 'Finanza'));
+      const datos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      const egresosFiltrados = datos.filter((item) => item.Tipo === 'Egreso');
+      setEgresos(egresosFiltrados);
+    };
+    cargarEgresos();
+  }, []);
+
+  useEffect(() => {
+    const total = egresos.reduce((acc, egreso) => acc + egreso.Monto, 0);
     setTotalEgresos(total);
   }, [egresos]);
 
-  const agregarEgreso = () => {
+  const agregarEgreso = async () => {
     if (!nombreEgreso || !montoEgreso || !fechaTexto) {
       Alert.alert('Error', 'Debe completar todos los campos');
       return;
@@ -34,20 +49,19 @@ const EgresosScreen = () => {
     }
 
     const nuevoEgreso = {
-      id: editandoEgreso ? editandoEgreso.id : egresos.length.toString(),
       nombre: nombreEgreso,
-      monto: numericMonto,
-      fecha: fechaTexto,
+      Monto: numericMonto,
+      Fecha: fechaEgreso,
+      Tipo: 'Egreso',
     };
 
     if (editandoEgreso) {
-      const nuevosEgresos = egresos.map((egreso) =>
-        egreso.id === editandoEgreso.id ? nuevoEgreso : egreso
-      );
-      setEgresos(nuevosEgresos);
+      await updateDoc(doc(db, 'Finanza', editandoEgreso.id), nuevoEgreso);
+      setEgresos(egresos.map((egreso) => (egreso.id === editandoEgreso.id ? { id: editandoEgreso.id, ...nuevoEgreso } : egreso)));
       setEditandoEgreso(null);
     } else {
-      setEgresos([...egresos, nuevoEgreso]);
+      const docRef = await addDoc(collection(db, 'Finanza'), nuevoEgreso);
+      setEgresos([...egresos, { id: docRef.id, ...nuevoEgreso }]);
     }
 
     setNombreEgreso('');
@@ -56,14 +70,15 @@ const EgresosScreen = () => {
     setModalVisible(false);
   };
 
-  const eliminarEgreso = (id) => {
+  const eliminarEgreso = async (id) => {
+    await deleteDoc(doc(db, 'Finanza', id));
     setEgresos(egresos.filter((egreso) => egreso.id !== id));
   };
 
   const editarEgreso = (egreso) => {
     setNombreEgreso(egreso.nombre);
-    setMontoEgreso(egreso.monto.toString());
-    setFechaTexto(egreso.fecha);
+    setMontoEgreso(egreso.Monto.toString());
+    setFechaTexto(new Date(egreso.Fecha.seconds * 1000).toLocaleDateString());
     setEditandoEgreso(egreso);
     setModalVisible(true);
   };
@@ -71,8 +86,8 @@ const EgresosScreen = () => {
   const renderEgreso = ({ item }) => (
     <View style={styles.egresoRow}>
       <Text style={styles.egresoText}>{item.nombre}</Text>
-      <Text style={styles.egresoText}>{item.monto.toLocaleString()} Gs.</Text>
-      <Text style={styles.egresoText}>{item.fecha}</Text>
+      <Text style={styles.egresoText}>{item.Monto.toLocaleString()} Gs.</Text>
+      <Text style={styles.egresoText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
       <View style={styles.rowButtons}>
         <Button title="Editar" onPress={() => editarEgreso(item)} color="blue" />
         <Button title="Eliminar" onPress={() => eliminarEgreso(item.id)} color="red" />
