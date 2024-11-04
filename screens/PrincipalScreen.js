@@ -2,18 +2,38 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
+import { getFirestore, collection, getDocs } from 'firebase/firestore';
+import appFirebase from '../credenciales';
 
-const PrincipalScreen = ({ route }) => {
-  // Verifica que `route.params` y sus propiedades no estén indefinidos
-  const ingresos = route?.params?.ingresos || [];
-  const egresos = route?.params?.egresos || [];
+const db = getFirestore(appFirebase);
 
+const PrincipalScreen = () => {
+  const [ingresos, setIngresos] = useState([]);
+  const [egresos, setEgresos] = useState([]);
   const [presupuestoTotal, setPresupuestoTotal] = useState(0);
   const [contornoColor, setContornoColor] = useState('#006400'); // Verde oscuro predeterminado
 
+  useEffect(() => {
+    const cargarDatos = async () => {
+      const querySnapshot = await getDocs(collection(db, 'Finanza'));
+      const datos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      
+      const ingresosFiltrados = datos.filter((item) => item.Tipo === 'Ingreso');
+      const egresosFiltrados = datos.filter((item) => item.Tipo === 'Egreso');
+
+      console.log("Ingresos:", ingresosFiltrados); // Verificar los ingresos
+      console.log("Egresos:", egresosFiltrados);   // Verificar los egresos
+
+      setIngresos(ingresosFiltrados);
+      setEgresos(egresosFiltrados);
+    };
+    
+    cargarDatos();
+  }, []);
+
   // Calcula el total de ingresos y egresos
-  const totalIngresos = ingresos.reduce((acc, ingreso) => acc + ingreso.monto, 0);
-  const totalEgresos = egresos.reduce((acc, egreso) => acc + egreso.monto, 0);
+  const totalIngresos = ingresos.reduce((acc, ingreso) => acc + ingreso.Monto, 0);
+  const totalEgresos = egresos.reduce((acc, egreso) => acc + egreso.Monto, 0);
 
   // Actualiza el presupuesto total y el color del contorno del círculo
   useEffect(() => {
@@ -50,8 +70,8 @@ const PrincipalScreen = ({ route }) => {
     <View style={styles.registroRow}>
       <Text style={styles.registroText}>{item.nombre}</Text>
       <Text style={styles.registroText}>{item.tipo}</Text>
-      <Text style={styles.registroText}>{item.monto.toLocaleString()} Gs.</Text>
-      <Text style={styles.registroText}>{item.fecha}</Text>
+      <Text style={styles.registroText}>{item.Monto.toLocaleString()} Gs.</Text>
+      <Text style={styles.registroText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
     </View>
   );
 
