@@ -21,9 +21,6 @@ const PrincipalScreen = () => {
       const ingresosFiltrados = datos.filter((item) => item.Tipo === 'Ingreso');
       const egresosFiltrados = datos.filter((item) => item.Tipo === 'Egreso');
 
-      console.log("Ingresos:", ingresosFiltrados); // Verificar los ingresos
-      console.log("Egresos:", egresosFiltrados);   // Verificar los egresos
-
       setIngresos(ingresosFiltrados);
       setEgresos(egresosFiltrados);
     };
@@ -34,6 +31,7 @@ const PrincipalScreen = () => {
   // Calcula el total de ingresos y egresos
   const totalIngresos = ingresos.reduce((acc, ingreso) => acc + ingreso.Monto, 0);
   const totalEgresos = egresos.reduce((acc, egreso) => acc + egreso.Monto, 0);
+  const total = totalIngresos + totalEgresos;
 
   // Actualiza el presupuesto total y el color del contorno del círculo
   useEffect(() => {
@@ -42,18 +40,18 @@ const PrincipalScreen = () => {
     setContornoColor(resultado >= 0 ? '#006400' : '#B22222'); // Verde si es positivo, rojo si es negativo
   }, [totalIngresos, totalEgresos]);
 
-  // Datos para el gráfico de pastel
+  // Datos para el gráfico de pastel en porcentaje redondeado
   const chartData = [
     {
       name: 'Presupuesto',
-      monto: totalIngresos,
+      monto: total ? Math.round((totalIngresos / total) * 100) : 0,
       color: '#50C878',
       legendFontColor: '#333',
       legendFontSize: 15,
     },
     {
       name: 'Gastos',
-      monto: totalEgresos,
+      monto: total ? Math.round((totalEgresos / total) * 100) : 0,
       color: '#FF7F7F',
       legendFontColor: '#333',
       legendFontSize: 15,
@@ -97,6 +95,7 @@ const PrincipalScreen = () => {
         backgroundColor="transparent"
         paddingLeft="15"
         absolute
+        hasLegend={true}
       />
 
       <Text style={styles.tableTitle}>Lista de Ingresos y Egresos</Text>
