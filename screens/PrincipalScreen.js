@@ -1,6 +1,6 @@
 // screens/PrincipalScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Dimensions, ScrollView } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import appFirebase from '../credenciales';
@@ -68,7 +68,7 @@ const PrincipalScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
       <View style={styles.header}>
         <View style={styles.headerItem}>
           <Text style={styles.headerLabel}>Ingreso</Text>
@@ -109,17 +109,21 @@ const PrincipalScreen = () => {
           data={registros}
           renderItem={renderRegistro}
           keyExtractor={(item) => item.id}
+          style={styles.flatList}
+          scrollEnabled={false} // Deshabilita el desplazamiento en FlatList
         />
       </View>
-    </View>
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
     backgroundColor: '#4B0082',
+  },
+  scrollContent: {
+    paddingBottom: 20,
   },
   header: {
     flexDirection: 'row',
@@ -203,6 +207,9 @@ const styles = StyleSheet.create({
     color: '#333',
     flex: 1,
     textAlign: 'center',
+  },
+  flatList: {
+    marginTop: 10,
   },
 });
 

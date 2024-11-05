@@ -1,6 +1,6 @@
 // screens/EgresosScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,7 +20,6 @@ const EgresosScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fechaTexto, setFechaTexto] = useState('');
 
-  // Leer datos de Firebase al iniciar
   useEffect(() => {
     const cargarEgresos = async () => {
       const querySnapshot = await getDocs(collection(db, 'Finanza'));
@@ -88,9 +87,13 @@ const EgresosScreen = () => {
       <Text style={styles.egresoText}>{item.nombre}</Text>
       <Text style={styles.egresoText}>{item.Monto.toLocaleString()} Gs.</Text>
       <Text style={styles.egresoText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
-      <View style={styles.rowButtons}>
-        <Button title="Editar" onPress={() => editarEgreso(item)} color="blue" />
-        <Button title="Eliminar" onPress={() => eliminarEgreso(item.id)} color="red" />
+      <View style={styles.iconButtons}>
+        <TouchableOpacity onPress={() => editarEgreso(item)}>
+          <MaterialIcons name="edit" size={24} color="blue" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => eliminarEgreso(item.id)}>
+          <MaterialIcons name="delete" size={24} color="red" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -116,12 +119,14 @@ const EgresosScreen = () => {
         <Text style={styles.addButtonText}>Agregar Egreso</Text>
       </TouchableOpacity>
       
-      <FlatList
-        data={egresos}
-        renderItem={renderEgreso}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={<Text style={styles.tableHeader}>Lista de Egresos</Text>}
-      />
+      <View style={styles.listContainer}>
+        <FlatList
+          data={egresos}
+          renderItem={renderEgreso}
+          keyExtractor={(item) => item.id}
+          ListHeaderComponent={<Text style={styles.tableHeader}>Lista de Egresos</Text>}
+        />
+      </View>
 
       <Modal isVisible={modalVisible}>
         <View style={styles.modalContent}>
@@ -159,8 +164,12 @@ const EgresosScreen = () => {
             />
           )}
           <View style={styles.modalButtons}>
-            <Button title="Guardar" onPress={agregarEgreso} color="blue" />
-            <Button title="Cancelar" onPress={() => { setModalVisible(false); setEditandoEgreso(null); }} color="red" />
+            <TouchableOpacity onPress={agregarEgreso} style={styles.saveButton}>
+              <Text style={styles.buttonText}>Guardar</Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => { setModalVisible(false); setEditandoEgreso(null); }} style={styles.cancelButton}>
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -172,20 +181,21 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#8A2BE2',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#fff',
   },
   expenseCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     borderWidth: 4,
-    borderColor: '#B22222', // Rojo oscuro para el contorno
+    borderColor: '#B22222',
     justifyContent: 'center',
     alignItems: 'center',
     marginBottom: 20,
@@ -199,7 +209,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   addButton: {
-    backgroundColor: '#FF7F7F', // Rojo claro para el fondo del botón
+    backgroundColor: '#FF7F7F',
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 5,
@@ -211,10 +221,17 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
+  listContainer: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 10,
+  },
   tableHeader: {
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 10,
+    color: '#8A2BE2',
+    textAlign: 'center',
   },
   egresoRow: {
     flexDirection: 'row',
@@ -222,14 +239,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    backgroundColor: '#fff',
   },
   egresoText: {
     fontSize: 16,
+    color: '#333',
   },
-  rowButtons: {
+  iconButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 100,
+    width: 60,
   },
   modalContent: {
     backgroundColor: 'white',
@@ -267,6 +286,20 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     width: '100%',
+  },
+  saveButton: {
+    backgroundColor: 'blue',
+    padding: 10,
+    borderRadius: 5,
+  },
+  cancelButton: {
+    backgroundColor: 'red',
+    padding: 10,
+    borderRadius: 5,
+  },
+  buttonText: {
+    color: '#fff',
+    textAlign: 'center',
   },
 });
 

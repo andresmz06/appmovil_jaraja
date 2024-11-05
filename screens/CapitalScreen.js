@@ -1,6 +1,6 @@
 // screens/CapitalScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, Button, FlatList, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, TextInput, FlatList, StyleSheet, TouchableOpacity, Alert, Button } from 'react-native'; // Asegúrate de que Button esté importado
 import Modal from 'react-native-modal';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -20,7 +20,6 @@ const CapitalScreen = () => {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [fechaTexto, setFechaTexto] = useState('');
 
-  // Leer datos de Firebase al iniciar
   useEffect(() => {
     const cargarIngresos = async () => {
       const querySnapshot = await getDocs(collection(db, 'Finanza'));
@@ -88,9 +87,13 @@ const CapitalScreen = () => {
       <Text style={styles.ingresoText}>{item.nombre}</Text>
       <Text style={styles.ingresoText}>{item.Monto.toLocaleString()} Gs.</Text>
       <Text style={styles.ingresoText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
-      <View style={styles.rowButtons}>
-        <Button title="Editar" onPress={() => editarIngreso(item)} color="blue" />
-        <Button title="Eliminar" onPress={() => eliminarIngreso(item.id)} color="red" />
+      <View style={styles.iconButtons}>
+        <TouchableOpacity onPress={() => editarIngreso(item)}>
+          <MaterialIcons name="edit" size={24} color="blue" />
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => eliminarIngreso(item.id)}>
+          <MaterialIcons name="delete" size={24} color="red" />
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -171,26 +174,27 @@ const CapitalScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#8A2BE2',
   },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 20,
+    marginTop: 20,
+    marginBottom: 10,
+    color: '#fff',
   },
   capitalCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
     borderWidth: 4,
     borderColor: '#006400',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
     alignSelf: 'center',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
+    marginBottom: 20,
   },
   capitalAmount: {
     color: '#000',
@@ -214,7 +218,9 @@ const styles = StyleSheet.create({
   tableHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#fff',
+    textAlign: 'center',
+    marginVertical: 10,
   },
   ingresoRow: {
     flexDirection: 'row',
@@ -222,14 +228,16 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ddd',
+    backgroundColor: '#fff',
   },
   ingresoText: {
     fontSize: 16,
+    color: '#000',
   },
-  rowButtons: {
+  iconButtons: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    width: 100,
+    width: 60,
   },
   modalContent: {
     backgroundColor: 'white',

@@ -1,10 +1,13 @@
-// App.js prueba
+// App.js
 import 'react-native-gesture-handler';
 import React, { useState } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createDrawerNavigator } from '@react-navigation/drawer';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AppProvider } from './AppContext';
+import { TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { signOut, getAuth } from 'firebase/auth';
 import FirebaseLogin from './firebase-login/FirebaseLogin';
 import FirebaseCrearCuenta from './firebase-login/FirebaseCrearCuenta';
 import FirebaseRecuperarCuenta from './firebase-login/FirebaseRecuperarCuenta';
@@ -27,13 +30,34 @@ function AuthStackNavigator({ setIsLoggedIn }) {
 }
 
 const Drawer = createDrawerNavigator();
-function AppDrawerNavigator() {
+function AppDrawerNavigator({ setIsLoggedIn }) {
+  const auth = getAuth();
+
+  const handleSignOut = () => {
+    signOut(auth)
+      .then(() => {
+        setIsLoggedIn(false); // Cambia el estado a no logueado
+      })
+      .catch((error) => {
+        console.error('Error al cerrar sesión:', error);
+      });
+  };
+
   return (
-    <Drawer.Navigator initialRouteName="Principal">
+    <Drawer.Navigator
+      initialRouteName="Principal"
+      screenOptions={{
+        headerRight: () => (
+          <TouchableOpacity onPress={handleSignOut} style={{ marginRight: 20 }}>
+            <MaterialIcons name="logout" size={24} color="black" />
+          </TouchableOpacity>
+        ),
+      }}
+    >
       <Drawer.Screen name="Principal" component={PrincipalScreen} />
       <Drawer.Screen name="Ingresos" component={CapitalScreen} />
       <Drawer.Screen name="Egresos" component={EgresosScreen} />
-      {/*<Drawer.Screen name="Historial" component={HistorialScreen} />*/}
+      {/* <Drawer.Screen name="Historial" component={HistorialScreen} /> */}
     </Drawer.Navigator>
   );
 }
@@ -45,7 +69,7 @@ export default function App() {
     <AppProvider>
       <NavigationContainer>
         {isLoggedIn ? (
-          <AppDrawerNavigator />
+          <AppDrawerNavigator setIsLoggedIn={setIsLoggedIn} />
         ) : (
           <AuthStackNavigator setIsLoggedIn={setIsLoggedIn} />
         )}
