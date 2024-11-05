@@ -1,6 +1,6 @@
 // screens/PrincipalScreen.js
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, Dimensions, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Dimensions, ScrollView, RefreshControl } from 'react-native';
 import { PieChart } from 'react-native-chart-kit';
 import { getFirestore, collection, getDocs } from 'firebase/firestore';
 import appFirebase from '../credenciales';
@@ -11,21 +11,28 @@ const PrincipalScreen = () => {
   const [ingresos, setIngresos] = useState([]);
   const [egresos, setEgresos] = useState([]);
   const [presupuestoTotal, setPresupuestoTotal] = useState(0);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const cargarDatos = async () => {
+    const querySnapshot = await getDocs(collection(db, 'Finanza'));
+    const datos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+    const ingresosFiltrados = datos.filter((item) => item.Tipo === 'Ingreso');
+    const egresosFiltrados = datos.filter((item) => item.Tipo === 'Egreso');
+
+    setIngresos(ingresosFiltrados);
+    setEgresos(egresosFiltrados);
+  };
 
   useEffect(() => {
-    const cargarDatos = async () => {
-      const querySnapshot = await getDocs(collection(db, 'Finanza'));
-      const datos = querySnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      
-      const ingresosFiltrados = datos.filter((item) => item.Tipo === 'Ingreso');
-      const egresosFiltrados = datos.filter((item) => item.Tipo === 'Egreso');
-
-      setIngresos(ingresosFiltrados);
-      setEgresos(egresosFiltrados);
-    };
-    
     cargarDatos();
   }, []);
+
+  // Función para refrescar al deslizar hacia abajo
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await cargarDatos();
+    setRefreshing(false);
+  };
 
   // Calcula el total de ingresos y egresos
   const totalIngresos = ingresos.reduce((acc, ingreso) => acc + ingreso.Monto, 0);
@@ -68,7 +75,11 @@ const PrincipalScreen = () => {
   );
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.scrollContent}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
+    >
       <View style={styles.header}>
         <View style={styles.headerItem}>
           <Text style={styles.headerLabel}>Ingreso</Text>
@@ -85,7 +96,6 @@ const PrincipalScreen = () => {
         <Text style={styles.availableText}>Disponible</Text>
       </View>
 
-      {/* Contenedor blanco para el gráfico y el detalle de egresos */}
       <View style={styles.chartContainer}>
         <Text style={styles.dashboardTitle}>Dashboard</Text>
         <PieChart
@@ -171,7 +181,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   chartContainer: {
-    backgroundColor: '#FFF', // Fondo blanco para el gráfico y los detalles
+    backgroundColor: '#FFF',
     borderRadius: 20,
     padding: 20,
     marginVertical: 20,
@@ -179,12 +189,12 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5, // Sombra para Android
+    elevation: 5,
   },
   dashboardTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#4B0082', // Color morado oscuro para el título
+    color: '#4B0082',
     marginBottom: 10,
     textAlign: 'center',
   },
