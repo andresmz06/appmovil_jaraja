@@ -11,7 +11,6 @@ const PrincipalScreen = () => {
   const [ingresos, setIngresos] = useState([]);
   const [egresos, setEgresos] = useState([]);
   const [presupuestoTotal, setPresupuestoTotal] = useState(0);
-  const [contornoColor, setContornoColor] = useState('#006400'); // Verde oscuro predeterminado
 
   useEffect(() => {
     const cargarDatos = async () => {
@@ -33,24 +32,20 @@ const PrincipalScreen = () => {
   const totalEgresos = egresos.reduce((acc, egreso) => acc + egreso.Monto, 0);
   const total = totalIngresos + totalEgresos;
 
-  // Actualiza el presupuesto total y el color del contorno del círculo
-  useEffect(() => {
-    const resultado = totalIngresos - totalEgresos;
-    setPresupuestoTotal(resultado);
-    setContornoColor(resultado >= 0 ? '#006400' : '#B22222'); // Verde si es positivo, rojo si es negativo
-  }, [totalIngresos, totalEgresos]);
+  // Calcula el presupuesto disponible
+  const disponible = totalIngresos - totalEgresos;
 
   // Datos para el gráfico de pastel en porcentaje redondeado
   const chartData = [
     {
-      name: 'Presupuesto',
+      name: '% Ingreso',
       monto: total ? Math.round((totalIngresos / total) * 100) : 0,
-      color: '#50C878',
+      color: '#4B0082',
       legendFontColor: '#333',
       legendFontSize: 15,
     },
     {
-      name: 'Gastos',
+      name: '% Egreso',
       monto: total ? Math.round((totalEgresos / total) * 100) : 0,
       color: '#FF7F7F',
       legendFontColor: '#333',
@@ -66,52 +61,56 @@ const PrincipalScreen = () => {
 
   const renderRegistro = ({ item }) => (
     <View style={styles.registroRow}>
-      <Text style={styles.registroText}>{item.nombre}</Text>
-      <Text style={styles.registroText}>{item.tipo}</Text>
-      <Text style={styles.registroText}>{item.Monto.toLocaleString()} Gs.</Text>
       <Text style={styles.registroText}>{new Date(item.Fecha.seconds * 1000).toLocaleDateString()}</Text>
+      <Text style={styles.registroText}>{item.nombre}</Text>
+      <Text style={styles.registroText}>{item.Monto.toLocaleString()} Gs.</Text>
     </View>
   );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Presupuesto Total</Text>
-      <View style={[styles.budgetCircle, { borderColor: contornoColor }]}>
-        <Text style={styles.budgetAmount}>{presupuestoTotal.toLocaleString()} Gs.</Text>
+      <View style={styles.header}>
+        <View style={styles.headerItem}>
+          <Text style={styles.headerLabel}>Ingreso</Text>
+          <Text style={styles.ingresoText}>${totalIngresos.toLocaleString()}</Text>
+        </View>
+        <View style={styles.headerItem}>
+          <Text style={styles.headerLabel}>Egreso</Text>
+          <Text style={styles.egresoText}>${totalEgresos.toLocaleString()}</Text>
+        </View>
+      </View>
+      
+      <View style={styles.availableContainer}>
+        <Text style={styles.availableAmount}>{disponible.toLocaleString()} Gs.</Text>
+        <Text style={styles.availableText}>Disponible</Text>
       </View>
 
-      <Text style={styles.chartTitle}>Distribución de Presupuesto y Gastos</Text>
-      <PieChart
-        data={chartData}
-        width={Dimensions.get('window').width - 40}
-        height={220}
-        chartConfig={{
-          backgroundColor: '#FFF',
-          backgroundGradientFrom: '#FFF',
-          backgroundGradientTo: '#FFF',
-          color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-        }}
-        accessor="monto"
-        backgroundColor="transparent"
-        paddingLeft="15"
-        absolute
-        hasLegend={true}
-      />
+      {/* Contenedor blanco para el gráfico y el detalle de egresos */}
+      <View style={styles.chartContainer}>
+        <Text style={styles.dashboardTitle}>Dashboard</Text>
+        <PieChart
+          data={chartData}
+          width={Dimensions.get('window').width - 60}
+          height={220}
+          chartConfig={{
+            backgroundColor: '#FFF',
+            backgroundGradientFrom: '#FFF',
+            backgroundGradientTo: '#FFF',
+            color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+          }}
+          accessor="monto"
+          backgroundColor="transparent"
+          paddingLeft="15"
+          absolute
+        />
 
-      <Text style={styles.tableTitle}>Lista de Ingresos y Egresos</Text>
-      <FlatList
-        data={registros}
-        renderItem={renderRegistro}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={
-          <View style={styles.tableHeader}>
-            <Text style={styles.headerText}>Nombre</Text>
-            <Text style={styles.headerText}>Tipo</Text>
-            <Text style={styles.headerText}>Monto</Text>
-            <Text style={styles.headerText}>Fecha</Text>
-          </View>
-        }
-      />
+        <Text style={styles.tableTitle}>Ultimos Movimientos</Text>
+        <FlatList
+          data={registros}
+          renderItem={renderRegistro}
+          keyExtractor={(item) => item.id}
+        />
+      </View>
     </View>
   );
 };
@@ -120,42 +119,76 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: '#4B0082',
   },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    marginVertical: 10,
   },
-  budgetCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    borderWidth: 4,
-    justifyContent: 'center',
+  headerItem: {
     alignItems: 'center',
-    marginBottom: 20,
-    alignSelf: 'center',
-    backgroundColor: 'white',
   },
-  budgetAmount: {
-    color: '#000',
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+  headerLabel: {
+    fontSize: 14,
+    color: '#FFF',
+    marginBottom: 4,
   },
-  chartTitle: {
+  ingresoText: {
+    color: '#50C878',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  egresoText: {
+    color: '#FF7F7F',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  availableContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFF',
+    borderRadius: 25,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginVertical: 15,
+  },
+  availableText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#A9A9A9',
+    marginLeft: 10,
+  },
+  availableAmount: {
+    fontSize: 20,
+    color: '#50C878',
+    fontWeight: 'bold',
+  },
+  chartContainer: {
+    backgroundColor: '#FFF', // Fondo blanco para el gráfico y los detalles
+    borderRadius: 20,
+    padding: 20,
+    marginVertical: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5, // Sombra para Android
+  },
+  dashboardTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#4B0082', // Color morado oscuro para el título
     marginBottom: 10,
     textAlign: 'center',
   },
   tableTitle: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#4B0082',
     marginTop: 20,
-    marginBottom: 10,
     textAlign: 'center',
   },
   registroRow: {
@@ -163,26 +196,13 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     padding: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
+    borderBottomColor: '#DDD',
   },
   registroText: {
-    fontSize: 16,
+    fontSize: 14,
+    color: '#333',
     flex: 1,
     textAlign: 'center',
-  },
-  tableHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    backgroundColor: '#f1f1f1',
-  },
-  headerText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    flex: 1,
   },
 });
 

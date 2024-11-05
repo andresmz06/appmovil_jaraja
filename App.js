@@ -31,9 +31,9 @@ function AppDrawerNavigator() {
   return (
     <Drawer.Navigator initialRouteName="Principal">
       <Drawer.Screen name="Principal" component={PrincipalScreen} />
-      <Drawer.Screen name="Capital" component={CapitalScreen} />
+      <Drawer.Screen name="Ingresos" component={CapitalScreen} />
       <Drawer.Screen name="Egresos" component={EgresosScreen} />
-      <Drawer.Screen name="Historial" component={HistorialScreen} />
+      {/*<Drawer.Screen name="Historial" component={HistorialScreen} />*/}
     </Drawer.Navigator>
   );
 }
