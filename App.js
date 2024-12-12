@@ -15,6 +15,8 @@ import PrincipalScreen from './screens/PrincipalScreen';
 import CapitalScreen from './screens/CapitalScreen';
 import EgresosScreen from './screens/EgresosScreen';
 import HistorialScreen from './screens/HistorialScreen';
+import ProductosScreen from './screens/ProductosScreen';
+
 
 const AuthStack = createStackNavigator();
 function AuthStackNavigator({ setIsLoggedIn }) {
@@ -58,6 +60,7 @@ function AppDrawerNavigator({ setIsLoggedIn }) {
       <Drawer.Screen name="Ingresos" component={CapitalScreen} />
       <Drawer.Screen name="Egresos" component={EgresosScreen} />
       <Drawer.Screen name="Historial" component={HistorialScreen} />
+      <Drawer.Screen name="Productos" component={ProductosScreen} />
     </Drawer.Navigator>
   );
 }
